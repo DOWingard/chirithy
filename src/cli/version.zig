@@ -24,16 +24,10 @@ pub fn run(alloc: Allocator) !u8 {
     defer environ_map.deinit();
 
     const stdout = &stdout_writer.interface;
-    const tty = try stdout_file.isTty(global.io());
 
-    if (tty) if (build_config.version.build) |commit_hash| {
-        try stdout.print(
-            "\x1b]8;;https://github.com/ghostty-org/ghostty/commit/{s}\x1b\\",
-            .{commit_hash},
-        );
-    };
-    try stdout.print("Ghostty {s}\n\n", .{build_config.version_string});
-    if (tty) try stdout.print("\x1b]8;;\x1b\\", .{});
+    // No commit hyperlink: commits of this build do not exist in the
+    // upstream repository the link used to point at.
+    try stdout.print("Chirithy {s} (based on Ghostty)\n\n", .{build_config.version_string});
 
     try stdout.print("Version\n", .{});
     try stdout.print("  - version: {s}\n", .{build_config.version_string});
