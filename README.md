@@ -7,31 +7,58 @@
   The Ghostty terminal emulator, themed after the Spirit Dream Eater.
 </p>
 
+<p align="center">
+  <img src="images/chirithy/screenshot-modes.png" alt="Three Chirithy windows: Spirit mode on a light desktop, Spirit mode on a dark desktop, and Nightmare mode">
+  <br>
+  <sub>Spirit mode on a light desktop, Spirit mode on a dark desktop, Nightmare mode.</sub>
+</p>
+
 ## About
 
-Chirithy is a build of [Ghostty](https://github.com/ghostty-org/ghostty)
-for Linux (GTK). It keeps Ghostty's terminal core, renderer and features
-unchanged and adds a theme with behavior:
+Chirithy is a fork of [Ghostty](https://github.com/ghostty-org/ghostty)
+1.4.0 for Linux (GTK). Ghostty's terminal core, renderer and features are
+unchanged. Chirithy adds a theme that reacts to what the terminal is doing:
+it changes color when you become root or connect to another machine, and a
+companion in the corner reacts to your commands.
 
-- **Two modes.** A terminal is in Spirit mode or Nightmare mode. Spirit is
-  home and follows the desktop: light grey fur on a light desktop, white on
-  black on a dark one. A terminal turns to Nightmare while a root process or
-  a remote shell holds its foreground, so the palette is a warning about
-  where your keystrokes are going.
+Everything Ghostty documents at <https://ghostty.org/docs> still applies.
+This README covers only what Chirithy adds or changes.
+
+## What Chirithy adds to Ghostty
+
+- **Spirit and Nightmare modes.** Each terminal is in Spirit mode or
+  Nightmare mode. Spirit follows the desktop: light grey on a light desktop,
+  white on black on a dark one. A terminal turns to Nightmare while a root
+  process or a remote shell (`ssh`, `mosh`, `telnet`) holds its foreground, so
+  you can see where your keystrokes are going before you type them. See
+  [Modes](#modes).
+- **Three built-in themes.** `Chirithy Spirit`, `Chirithy Spirit Dark` and
+  `Chirithy Nightmare`. They are compiled into the binary, so the defaults
+  work even without the installed resources. Tests check the contrast
+  ratios of `Chirithy Spirit Dark`, so that dim text, borders and panels
+  drawn by programs such as editors and coding assistants stay distinct on
+  black.
 - **A companion.** Spirit or Nightmare Chirithy sits in a corner of every
   terminal and reacts to the shell: it perks up while a command runs, jumps
-  when one succeeds and shakes when one fails.
+  when one succeeds and shakes when one fails. See
+  [The companion](#the-companion).
+- **Escape twice to clear.** A double Escape clears the bash command line,
+  and Ctrl+Y brings it back. See
+  [Clearing the command line](#clearing-the-command-line).
 - **The Lux trail.** An optional cursor effect: a streak of light and a
-  burst of sparkles when the cursor jumps.
+  burst of sparkles when the cursor jumps. See [The Lux trail](#the-lux-trail).
 - **The Final World.** An optional background: an endless sky over still
-  water, by day behind a light theme and by night behind a dark one.
+  water, by day behind a light theme and by night behind a dark one. See
+  [The Final World](#the-final-world).
 - **Chirithy chrome.** Its own icon, and tabby stripes on the header and tab
   bars.
-- **Escape twice to clear.** A double Escape clears the bash command line.
-
-The executable is `chirithy`. Everything Ghostty documents at
-<https://ghostty.org/docs> still applies; only the differences are listed
-here.
+- **Its own name.** The executable is `chirithy`, the application ID is
+  `dev.chirithy.terminal` and the configuration lives in
+  `~/.config/chirithy/`. The desktop entry, D-Bus and systemd units, file
+  manager menu entries and shell completions use the new names, so Chirithy
+  does not take over an installed Ghostty's configuration or desktop
+  integration. Names that programs and remote hosts rely on, such as `TERM`,
+  stay the same; see [What is unchanged](#what-is-unchanged).
 
 ## Modes
 
@@ -186,6 +213,8 @@ Requirements beyond those of Ghostty itself:
 - GTK 4.18 and libadwaita 1.7 or newer
 
 ```sh
+git clone https://github.com/DOWingard/chirithy.git
+cd chirithy
 zig build \
   -Doptimize=ReleaseFast \
   -Dinstalled-exe-path="$HOME/.local/bin/chirithy" \
@@ -220,9 +249,13 @@ cheap.
 ## Credits and license
 
 Chirithy is built on Ghostty by Mitchell Hashimoto and the Ghostty
-contributors, and is distributed under the same MIT license. See `LICENSE`.
+contributors, and its code is distributed under the same MIT license. See
+`LICENSE`. Problems with Chirithy belong here, not in the Ghostty issue
+tracker.
 
 Chirithy is a character from the Kingdom Hearts series. The character and
 the artwork under `images/chirithy/` belong to Square Enix and Disney. This
-is an unofficial fan project for personal use, with no affiliation to or
-endorsement by either company; the MIT license does not cover that artwork.
+is an unofficial, non-commercial fan project with no affiliation to or
+endorsement by either company, and the MIT license does not cover that
+artwork. If you hold rights to it and want it removed, open an issue on this
+repository.
