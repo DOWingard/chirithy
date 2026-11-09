@@ -301,3 +301,21 @@ label.resize-overlay {
     transform: translateX(4px);
   }
 }
+
+/*
+ * Tabby stripes
+ *
+ * The header and tab bars of terminal windows carry faint diagonal stripes,
+ * after the markings in Chirithy's fur. They are drawn in the text color of
+ * the bar at low opacity, so they stay subtle under any window theme.
+ */
+window.window headerbar,
+window.window tabbar {
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0px,
+    transparent 26px,
+    color-mix(in srgb, currentColor 6%, transparent) 26px,
+    color-mix(in srgb, currentColor 6%, transparent) 36px
+  );
+}
