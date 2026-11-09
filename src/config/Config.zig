@@ -679,6 +679,15 @@ theme: ?Theme = .{
 /// `custom-shader-animation` to be left enabled.
 @"chirithy-cursor-trail": bool = false,
 
+/// Use the Final World as the terminal background: an endless sky over
+/// still water in Spirit mode, and the same view at night with a single
+/// light on the horizon in Nightmare mode.
+///
+/// This sets `background-image` to a bundled image for the current mode and
+/// `background-image-fit` to `cover`. It does nothing if you set
+/// `background-image` yourself.
+@"chirithy-final-world": bool = false,
+
 /// Background color for the window.
 /// Specified as either hex (`#RRGGBB` or `RRGGBB`) or a named X11 color.
 background: Color = .{ .r = 0x28, .g = 0x2C, .b = 0x34 },
@@ -4863,6 +4872,29 @@ pub fn finalize(self: *Config) !void {
             // Mark that we use a conditional theme
             self._conditional_set.insert(.theme);
         }
+    }
+
+    // The Final World is a pair of bundled background images, one per mode.
+    if (self.@"chirithy-final-world" and self.@"background-image" == null) world: {
+        const mode: chirithy.Mode = switch (self._conditional_state.theme) {
+            .light => .spirit,
+            .dark => .nightmare,
+        };
+        const path = chirithy.backgrounds.path(alloc, .finalWorld(mode)) catch |err| switch (err) {
+            error.OutOfMemory => return error.OutOfMemory,
+            error.ResourcesDirNotFound => {
+                log.warn("chirithy-final-world is set but the resources directory was not found", .{});
+                break :world;
+            },
+        };
+
+        // Optional, so a missing file degrades to the plain background.
+        self.@"background-image" = .{ .optional = path };
+        self.@"background-image-fit" = .cover;
+
+        // The image depends on the mode even when the theme does not, so
+        // the config has to be rebuilt whenever the mode changes.
+        self._conditional_set.insert(.theme);
     }
 
     // The Lux trail is a bundled custom shader. It is added here rather

@@ -4,6 +4,7 @@
 //! to upstream files stay small call sites, which keeps rebasing onto new
 //! upstream releases cheap.
 
+pub const backgrounds = @import("chirithy/backgrounds.zig");
 pub const elevation = @import("chirithy/elevation.zig");
 pub const mode = @import("chirithy/mode.zig");
 pub const shaders = @import("chirithy/shaders.zig");
@@ -38,6 +39,7 @@ pub const Event = union(enum) {
 };
 
 test {
+    _ = backgrounds;
     _ = elevation;
     _ = mode;
     _ = shaders;
