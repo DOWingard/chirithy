@@ -622,17 +622,19 @@ theme: ?Theme = .{
 ///
 /// Available conditions:
 ///
-///   * `dark` - The desktop prefers a dark color scheme.
 ///   * `root` - The foreground process of the terminal runs as root, such as
-///     a root shell or a running `sudo` command.
+///     a root shell or a running `sudo` command. Enabled by default.
 ///   * `ssh` - The foreground process of the terminal is a remote shell
-///     client such as `ssh` or `mosh`.
+///     client such as `ssh` or `mosh`. Enabled by default.
+///   * `dark` - The desktop prefers a dark color scheme. Disabled by
+///     default, because on a dark desktop it keeps every terminal in
+///     Nightmare mode and so hides the other two conditions.
 ///
 /// The format of this is a list of conditions to enable separated by commas.
 /// If you prefix a condition with `no-` then it is disabled. If you omit a
 /// condition, its default value is used, so you must explicitly disable
-/// conditions you don't want. For example, `no-dark` keeps Spirit mode on a
-/// dark desktop while still warning about root and remote sessions.
+/// conditions you don't want. For example, `dark,no-ssh` follows the desktop
+/// color scheme and ignores remote sessions.
 ///
 /// `root` and `ssh` are only detected on Linux. They look at the process in
 /// the foreground of the terminal itself, so they cannot see inside a

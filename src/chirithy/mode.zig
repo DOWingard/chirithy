@@ -2,10 +2,11 @@
 //!
 //! A surface is always in exactly one of the two modes. The mode decides
 //! which side of a light/dark theme pair the surface renders with and which
-//! companion it shows. Besides following the desktop color scheme, a surface
-//! turns to Nightmare while something privileged or remote holds its
-//! foreground, which makes the palette a warning about where the next
-//! keystrokes are going.
+//! companion it shows. Spirit is home. A surface turns to Nightmare while
+//! something privileged or remote holds its foreground, which makes the
+//! palette a warning about where the next keystrokes are going. Following
+//! the desktop color scheme instead is opt-in, because doing both at once
+//! would hide that warning from everyone on a dark desktop.
 
 const std = @import("std");
 const conditional = @import("../config/conditional.zig");
@@ -39,8 +40,10 @@ pub const Policy = enum {
 /// The conditions that put a surface into Nightmare mode under the `auto`
 /// policy. This is the `chirithy-nightmare-triggers` configuration value.
 pub const Triggers = packed struct {
-    /// The desktop prefers a dark color scheme.
-    dark: bool = true,
+    /// The desktop prefers a dark color scheme. Off by default: with it
+    /// on, a dark desktop is always in Nightmare mode and the other two
+    /// conditions can no longer be seen.
+    dark: bool = false,
 
     /// The foreground process of the terminal runs as root.
     root: bool = true,
@@ -163,12 +166,22 @@ test "auto policy follows enabled triggers" {
     try testing.expectEqual(Mode.spirit, (Inputs{}).resolve());
 
     // Each trigger on its own.
-    try testing.expectEqual(Mode.nightmare, (Inputs{ .system = .dark }).resolve());
-    try testing.expectEqual(Mode.nightmare, (Inputs{ .elevation = .root }).resolve());
-    try testing.expectEqual(Mode.nightmare, (Inputs{ .elevation = .ssh }).resolve());
+    const all: Triggers = .{ .dark = true, .root = true, .ssh = true };
+    try testing.expectEqual(Mode.nightmare, (Inputs{
+        .triggers = all,
+        .system = .dark,
+    }).resolve());
+    try testing.expectEqual(Mode.nightmare, (Inputs{
+        .triggers = all,
+        .elevation = .root,
+    }).resolve());
+    try testing.expectEqual(Mode.nightmare, (Inputs{
+        .triggers = all,
+        .elevation = .ssh,
+    }).resolve());
 
     // A disabled trigger does nothing, the others still work.
-    const no_dark: Triggers = .{ .dark = false };
+    const no_dark: Triggers = .{ .dark = false, .root = true, .ssh = true };
     try testing.expectEqual(Mode.spirit, (Inputs{
         .triggers = no_dark,
         .system = .dark,
@@ -179,7 +192,7 @@ test "auto policy follows enabled triggers" {
         .elevation = .root,
     }).resolve());
 
-    const only_dark: Triggers = .{ .root = false, .ssh = false };
+    const only_dark: Triggers = .{ .dark = true, .root = false, .ssh = false };
     try testing.expectEqual(Mode.spirit, (Inputs{
         .triggers = only_dark,
         .elevation = .root,
@@ -188,6 +201,16 @@ test "auto policy follows enabled triggers" {
         .triggers = only_dark,
         .elevation = .ssh,
     }).resolve());
+}
+
+test "a dark desktop stays in Spirit by default" {
+    const testing = std.testing;
+    try testing.expectEqual(Mode.spirit, (Inputs{ .system = .dark }).resolve());
+    try testing.expectEqual(Mode.nightmare, (Inputs{
+        .system = .dark,
+        .elevation = .root,
+    }).resolve());
+    try testing.expectEqual(Mode.nightmare, (Inputs{ .elevation = .ssh }).resolve());
 }
 
 test "tracker needs consecutive samples to enter" {
