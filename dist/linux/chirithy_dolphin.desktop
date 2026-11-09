@@ -2,9 +2,9 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=inode/directory
-Actions=RunGhosttyDir
+Actions=RunChirithyDir
 
-[Desktop Action RunGhosttyDir]
-Name=Open Ghostty Here
-Icon=com.mitchellh.ghostty
-Exec=ghostty +new-window --working-directory=%F
+[Desktop Action RunChirithyDir]
+Name=Open Chirithy Here
+Icon=dev.chirithy.terminal
+Exec=chirithy +new-window --working-directory=%F

@@ -12,13 +12,13 @@ const DBus = @import("DBus.zig");
 // `ghostty +new-tab` is equivalent to the following command (on a release build):
 //
 // ```
-// gdbus call --session --dest com.mitchellh.ghostty --object-path /com/mitchellh/ghostty --method org.gtk.Actions.Activate new-tab '[<@(tas) (0, [])>]' []
+// gdbus call --session --dest dev.chirithy.terminal --object-path /dev/chirithy/terminal --method org.gtk.Actions.Activate new-tab '[<@(tas) (0, [])>]' []
 // ```
 //
 // `ghostty +new-tab -e echo hello` would be equivalent to the following command (on a release build):
 //
 // ```
-// gdbus call --session --dest com.mitchellh.ghostty --object-path /com/mitchellh/ghostty --method org.gtk.Actions.Activate new-tab '[<@(tas) (0, ["-e" "echo" "hello"])>]' []
+// gdbus call --session --dest dev.chirithy.terminal --object-path /dev/chirithy/terminal --method org.gtk.Actions.Activate new-tab '[<@(tas) (0, ["-e" "echo" "hello"])>]' []
 // ```
 pub fn newTab(alloc: Allocator, target: apprt.ipc.Target, value: apprt.ipc.Action.NewTab) (Allocator.Error || std.Io.Writer.Error || apprt.ipc.Errors)!bool {
     var dbus = try DBus.init(alloc, target, "new-tab");

@@ -1402,7 +1402,7 @@ pub const Window = extern struct {
     ) callconv(.c) ?[*:0]const u8 {
         if (title_override_) |v| return glib.ext.dupeZ(u8, std.mem.span(v));
         if (title_) |v| return glib.ext.dupeZ(u8, std.mem.span(v));
-        return glib.ext.dupeZ(u8, "Ghostty");
+        return glib.ext.dupeZ(u8, "Chirithy");
     }
 
     fn closureSubtitle(
@@ -2016,8 +2016,8 @@ pub const Window = extern struct {
         _: ?*glib.Variant,
         self: *Self,
     ) callconv(.c) void {
-        const name = "Ghostty";
-        const icon = "com.mitchellh.ghostty";
+        const name = "Chirithy";
+        const icon = "dev.chirithy.terminal";
         const website = "https://ghostty.org";
 
         adw.showAboutDialog(
@@ -2030,8 +2030,8 @@ pub const Window = extern struct {
             icon,
             "version",
             build_config.version_string.ptr,
-            "issue-url",
-            "https://github.com/ghostty-org/ghostty/issues",
+            "comments",
+            i18n._("A Chirithy-themed build of the Ghostty terminal emulator."),
             "website",
             website,
             @as(?*anyopaque, null),

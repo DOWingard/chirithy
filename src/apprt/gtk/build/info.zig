@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 
 /// Base application ID
-pub const base_application_id = "com.mitchellh.ghostty";
+pub const base_application_id = "dev.chirithy.terminal";
 
 /// GTK application ID
 pub const application_id = switch (builtin.mode) {
@@ -9,7 +9,7 @@ pub const application_id = switch (builtin.mode) {
     .fast, .small => base_application_id,
 };
 
-pub const resource_path = "/com/mitchellh/ghostty";
+pub const resource_path = "/dev/chirithy/terminal";
 
 /// GTK object path
 pub const object_path = switch (builtin.mode) {

@@ -2246,7 +2246,7 @@ const Action = struct {
 
         // Set a default title if we don't already have one
         const t = switch (n.title.len) {
-            0 => "Ghostty",
+            0 => "Chirithy",
             else => n.title,
         };
 
@@ -2254,7 +2254,7 @@ const Action = struct {
         defer notification.unref();
         notification.setBody(n.body);
 
-        const icon = gio.ThemedIcon.new("com.mitchellh.ghostty");
+        const icon = gio.ThemedIcon.new("dev.chirithy.terminal");
         defer icon.unref();
         notification.setIcon(icon.as(gio.Icon));
         notification.setDefaultActionAndTargetValue(
