@@ -27,6 +27,7 @@ unchanged and adds a theme with behavior:
   water, by day behind a light theme and by night behind a dark one.
 - **Chirithy chrome.** Its own icon, and tabby stripes on the header and tab
   bars.
+- **Escape twice to clear.** A double Escape clears the bash command line.
 
 The executable is `chirithy`. Everything Ghostty documents at
 <https://ghostty.org/docs> still applies; only the differences are listed
@@ -125,6 +126,24 @@ It is an overlay on top of the terminal rather than part of the renderer.
 It only causes redraws during its one second reactions, never while idle,
 and never in an unfocused terminal. It takes no pointer or keyboard input,
 so text underneath it stays selectable and clickable.
+
+## Clearing the command line
+
+Press Escape twice to clear the whole command line in bash. The text goes to
+the kill ring, so Ctrl+Y brings it back. Programs running in the terminal,
+such as editors, never see the change: it is a bash key binding, so it only
+applies while bash is reading a command.
+
+- It needs the bash shell integration, which is loaded automatically, and
+  bash's default emacs editing mode. Vi mode is left alone.
+- It replaces bash's own binding of a double Escape, which completes like
+  Tab.
+- Some system `inputrc` files bind other sequences that start with two
+  Escapes, which makes bash wait for its key sequence timeout before it acts.
+  If `keyseq-timeout` is still bash's default of 500 ms, it is lowered to
+  100 ms so that the line clears without a delay. A value you set is kept.
+
+Turn it off with `shell-integration-features = no-escape-clear`.
 
 ## The Lux trail
 

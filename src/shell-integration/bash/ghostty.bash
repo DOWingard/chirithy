@@ -128,6 +128,27 @@ if [[ "$GHOSTTY_SHELL_FEATURES" == *ssh-* ]]; then
   }
 fi
 
+# Escape Clear
+#
+# Pressing Escape twice clears the whole command line. The text goes to the
+# kill ring, so Ctrl+Y brings it back. Only the emacs keymap is changed: in
+# vi mode Escape already leaves insert mode.
+if [[ "$GHOSTTY_SHELL_FEATURES" == *"escape-clear"* ]]; then
+  builtin bind -m emacs '"\e\e": kill-whole-line' 2>/dev/null
+
+  # If any other binding starts with two Escapes, such as Escape followed by
+  # an arrow key in some system inputrc files, readline waits for its key
+  # sequence timeout before it acts on a double Escape. Shorten bash's
+  # default of half a second so the line clears without a visible delay.
+  # A terminal writes all bytes of one key at once, so this does not split
+  # escape sequences. A timeout the user set is left alone.
+  _ghostty_readline_vars=$'\n'"$(builtin bind -v 2>/dev/null)"$'\n'
+  if [[ "$_ghostty_readline_vars" == *$'\n'"set keyseq-timeout 500"$'\n'* ]]; then
+    builtin bind 'set keyseq-timeout 100' 2>/dev/null
+  fi
+  builtin unset _ghostty_readline_vars
+fi
+
 # This is set to 1 when we're executing a command so that we don't
 # send prompt marks multiple times.
 _ghostty_executing=""

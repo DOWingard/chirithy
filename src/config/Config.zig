@@ -3073,6 +3073,13 @@ keybind: Keybinds = .{},
 ///     This is particularly useful on macOS where PATH is often overridden by
 ///     system scripts. The directory is only added if not already present.
 ///
+///   * `escape-clear` - Clear the whole command line when Escape is pressed
+///     twice. The text goes to the kill ring, so Ctrl+Y brings it back. This
+///     replaces bash's own binding of a double Escape, which completes like
+///     Tab. Only bash is supported, in its default emacs editing mode. If bash
+///     still uses its default key sequence timeout of 500 ms, it is lowered to
+///     100 ms so that the line clears without a delay. Enabled by default.
+///
 /// SSH features work independently and can be combined for optimal experience:
 /// when both `ssh-env` and `ssh-terminfo` are enabled, Ghostty will install its
 /// terminfo on remote hosts and use `xterm-ghostty` as TERM, falling back to
@@ -9080,6 +9087,7 @@ pub const ShellIntegrationFeatures = packed struct {
     @"ssh-env": bool = false,
     @"ssh-terminfo": bool = false,
     path: bool = true,
+    @"escape-clear": bool = true,
 };
 
 /// See vt-xt-checksum-extension
