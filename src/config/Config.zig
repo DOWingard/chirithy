@@ -599,7 +599,10 @@ language: ?[:0]const u8 = null,
 /// be fixed in a future update:
 ///
 ///   - macOS: titlebar tabs style is not updated when switching themes.
-theme: ?Theme = null,
+theme: ?Theme = .{
+    .light = chirithy.themes.spirit,
+    .dark = chirithy.themes.nightmare,
+},
 
 /// Background color for the window.
 /// Specified as either hex (`#RRGGBB` or `RRGGBB`) or a named X11 color.
