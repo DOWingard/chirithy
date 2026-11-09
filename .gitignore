@@ -32,3 +32,10 @@ glad.zip
 vgcore.*
 
 /sprite_face_test*
+
+# Local secrets and working notes
+.env
+CONTEXT/
+
+# Generated code graph
+graphify-out/
