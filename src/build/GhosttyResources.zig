@@ -117,6 +117,14 @@ pub fn init(b: *std.Build, cfg: *const Config, deps: *const SharedDeps) !Ghostty
             });
             try steps.append(b.allocator, &install_step.step);
         }
+
+        // The built-in themes, so they are listed alongside the bundled ones.
+        const install_step = b.addInstallDirectory(.{
+            .source_dir = b.path("src/chirithy/themes"),
+            .install_dir = .{ .custom = "share" },
+            .install_subdir = b.pathJoin(&.{ "ghostty", "themes" }),
+        });
+        try steps.append(b.allocator, &install_step.step);
     }
 
     // Fish shell completions

@@ -28,6 +28,7 @@ const Conditional = conditional.Conditional;
 const file_load = @import("file_load.zig");
 const formatterpkg = @import("formatter.zig");
 const themepkg = @import("theme.zig");
+const chirithy = @import("../chirithy.zig");
 const url = @import("url.zig");
 pub const Key = @import("key.zig").Key;
 const MetricModifier = fontpkg.Metrics.Modifier;
@@ -4657,16 +4658,34 @@ fn loadTheme(self: *Config, theme: Theme) !void {
         .dark => theme.dark,
     };
 
+    // Built-in themes are compiled in, so the default theme resolves even
+    // without a resources directory. They take priority over files.
+    if (chirithy.themes.builtin(name)) |data| {
+        var reader: std.Io.Reader = .fixed(data);
+        return self.loadThemeFrom(&reader, name);
+    }
+
     // Find our theme file and open it. See the open function for details.
     const themefile = (try themepkg.open(
         self._arena.?.allocator(),
         name,
         &self._diagnostics,
     )) orelse return;
-    const path = themefile.path;
     const file = themefile.file;
     defer file.close(global.io());
 
+    var buf: [2048]u8 = undefined;
+    var file_reader = file.reader(global.io(), &buf);
+    return self.loadThemeFrom(&file_reader.interface, themefile.path);
+}
+
+/// Load a theme from its contents and apply the existing config on top.
+/// `path` names the source in diagnostics.
+fn loadThemeFrom(
+    self: *Config,
+    reader: *std.Io.Reader,
+    path: []const u8,
+) !void {
     // From this point onwards, we load the theme and do a bit of a dance
     // to achieve two separate goals:
     //
@@ -4686,9 +4705,6 @@ fn loadTheme(self: *Config, theme: Theme) !void {
     errdefer new_config.deinit();
 
     // Load our theme
-    var buf: [2048]u8 = undefined;
-    var file_reader = file.reader(global.io(), &buf);
-    const reader = &file_reader.interface;
     var iter: cli.args.LineIterator = .{ .r = reader, .filepath = path };
     try new_config.loadIter(alloc_gpa, &iter);
 

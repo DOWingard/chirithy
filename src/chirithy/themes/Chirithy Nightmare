@@ -1,0 +1,31 @@
+# Chirithy Nightmare
+#
+# Dark theme taken from the Nightmare Chirithy design: dark purple fur and
+# black stripes for the background, the yellow muzzle for the cursor and
+# yellow, fuchsia ears for magenta, red eyes for red and the olive star of
+# the purse for green.
+#
+# Every color except black keeps a contrast ratio of at least 3.5:1 against
+# the background.
+palette = 0=#29172e
+palette = 1=#f0506e
+palette = 2=#a6af75
+palette = 3=#fae896
+palette = 4=#9a8cff
+palette = 5=#e05cb0
+palette = 6=#7fd6d0
+palette = 7=#dac6dd
+palette = 8=#8f6c93
+palette = 9=#ff6b81
+palette = 10=#c5cf8e
+palette = 11=#fff3b8
+palette = 12=#b7adff
+palette = 13=#ff7fcb
+palette = 14=#a5ede6
+palette = 15=#fff7fb
+background = #1d1022
+foreground = #f0e3ee
+cursor-color = #fae896
+cursor-text = #29172e
+selection-background = #5b2a73
+selection-foreground = #fff7fb

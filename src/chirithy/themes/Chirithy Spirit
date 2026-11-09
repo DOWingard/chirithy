@@ -1,0 +1,30 @@
+# Chirithy Spirit
+#
+# Light theme taken from the Spirit Chirithy design: light grey fur for the
+# background, the dark tabby stripes for text, the dark blue eyes for blue,
+# the pale blue cape for selections and the pink purse for the cursor.
+#
+# Normal colors keep a contrast ratio of at least 4.5:1 against the
+# background, bright colors at least 3:1.
+palette = 0=#33353d
+palette = 1=#b8323f
+palette = 2=#2f7359
+palette = 3=#8a6100
+palette = 4=#1f6480
+palette = 5=#9a3d72
+palette = 6=#1b6f7b
+palette = 7=#6a6563
+palette = 8=#51565d
+palette = 9=#d9434f
+palette = 10=#3a8c6d
+palette = 11=#a87c00
+palette = 12=#2a7591
+palette = 13=#c4579a
+palette = 14=#24808e
+palette = 15=#87827f
+background = #ece9e7
+foreground = #33353d
+cursor-color = #d9434f
+cursor-text = #ffffff
+selection-background = #b0d9e9
+selection-foreground = #33353d
