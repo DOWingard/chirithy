@@ -38,14 +38,10 @@ vec2 center(vec4 cursor) {
     return cursor.xy + vec2(0.5, -0.5) * cursor.zw;
 }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    vec4 base = texture(iChannel0, fragCoord / iResolution.xy);
-
+// How strongly a fragment is tinted with the cursor color, from 0 to 0.9.
+float lux(vec2 fragCoord) {
     float age = iTime - iTimeCursorChange;
-    if (iCursorVisible == 0 || age < 0.0 || age > DURATION) {
-        fragColor = base;
-        return;
-    }
+    if (iCursorVisible == 0 || age < 0.0 || age > DURATION) return 0.0;
 
     // 1 right after the move, 0 when the effect ends.
     float life = 1.0 - age / DURATION;
@@ -60,10 +56,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 path = cur - prev;
     float jump = length(path) / cell;
     float strength = smoothstep(MIN_JUMP, FULL_JUMP, jump);
-    if (strength <= 0.0) {
-        fragColor = base;
-        return;
-    }
+    if (strength <= 0.0) return 0.0;
 
     // Streak: a line from where the cursor was to where it is, brightest at
     // the cursor and thinning out as it ages.
@@ -85,9 +78,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         burst = max(burst, sparkle(fragCoord - at, size));
     }
 
+    return clamp(0.55 * streak + 0.9 * burst * life, 0.0, 0.9) * strength;
+}
+
+// The output is written exactly once, on the only path through the function.
+// With early returns the shader converter can no longer prove that every path
+// writes it and passes it as `inout`, which makes drivers warn that the
+// caller reads an uninitialized value.
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec4 base = texture(iChannel0, fragCoord / iResolution.xy);
+
     // Blend toward the cursor color instead of adding light, so the effect
     // is visible on light backgrounds as well as dark ones.
-    vec3 glow = iCurrentCursorColor.rgb;
-    float amount = clamp(0.55 * streak + 0.9 * burst * life, 0.0, 0.9) * strength;
-    fragColor = vec4(mix(base.rgb, glow, amount), base.a);
+    fragColor = vec4(mix(base.rgb, iCurrentCursorColor.rgb, lux(fragCoord)), base.a);
 }
