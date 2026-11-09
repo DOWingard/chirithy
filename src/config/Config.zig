@@ -668,6 +668,17 @@ theme: ?Theme = .{
 /// Valid values: `bottom-right`, `bottom-left`, `top-right`, `top-left`.
 @"chirithy-mascot-position": chirithy.MascotPosition = .@"bottom-right",
 
+/// Show the Lux trail: when the cursor jumps more than a cell or two, a
+/// streak of light follows it and star-shaped sparkles burst where it lands.
+/// The effect uses the cursor color, so it follows the theme.
+///
+/// This adds a bundled shader to `custom-shader`, after any shaders you
+/// configured yourself. An animated shader keeps the focused terminal
+/// rendering every frame instead of only when something changes, which costs
+/// GPU time and battery, so this is off by default. It also needs
+/// `custom-shader-animation` to be left enabled.
+@"chirithy-cursor-trail": bool = false,
+
 /// Background color for the window.
 /// Specified as either hex (`#RRGGBB` or `RRGGBB`) or a named X11 color.
 background: Color = .{ .r = 0x28, .g = 0x2C, .b = 0x34 },
@@ -4852,6 +4863,30 @@ pub fn finalize(self: *Config) !void {
             // Mark that we use a conditional theme
             self._conditional_set.insert(.theme);
         }
+    }
+
+    // The Lux trail is a bundled custom shader. It is added here rather
+    // than loaded separately so that the renderer needs no changes.
+    if (self.@"chirithy-cursor-trail") trail: {
+        const path = chirithy.shaders.path(alloc, .lux_trail) catch |err| switch (err) {
+            error.OutOfMemory => return error.OutOfMemory,
+            error.ResourcesDirNotFound => {
+                log.warn("chirithy-cursor-trail is set but the resources directory was not found", .{});
+                break :trail;
+            },
+        };
+
+        // finalize may run more than once on the same config.
+        for (self.@"custom-shader".value.items) |item| {
+            const existing = switch (item) {
+                inline else => |v| v,
+            };
+            if (std.mem.eql(u8, existing, path)) break :trail;
+        }
+
+        // Optional, so a missing file degrades to no effect instead of
+        // failing every other configured shader along with it.
+        try self.@"custom-shader".value.append(alloc, .{ .optional = path });
     }
 
     // Used for a variety of defaults. See the function docs as well the

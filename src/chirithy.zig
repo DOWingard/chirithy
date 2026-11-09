@@ -6,6 +6,7 @@
 
 pub const elevation = @import("chirithy/elevation.zig");
 pub const mode = @import("chirithy/mode.zig");
+pub const shaders = @import("chirithy/shaders.zig");
 pub const themes = @import("chirithy/themes.zig");
 
 pub const Mode = mode.Mode;
@@ -39,5 +40,6 @@ pub const Event = union(enum) {
 test {
     _ = elevation;
     _ = mode;
+    _ = shaders;
     _ = themes;
 }

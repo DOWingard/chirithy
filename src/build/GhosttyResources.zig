@@ -127,6 +127,17 @@ pub fn init(b: *std.Build, cfg: *const Config, deps: *const SharedDeps) !Ghostty
         try steps.append(b.allocator, &install_step.step);
     }
 
+    // Bundled custom shaders
+    {
+        const install_step = b.addInstallDirectory(.{
+            .source_dir = b.path("src/chirithy/shaders"),
+            .install_dir = .{ .custom = "share" },
+            .install_subdir = b.pathJoin(&.{ "ghostty", "shaders" }),
+            .include_extensions = &.{".glsl"},
+        });
+        try steps.append(b.allocator, &install_step.step);
+    }
+
     // Fish shell completions
     {
         const run = b.addRunArtifact(build_data_exe);
