@@ -385,47 +385,47 @@ fn addLinuxAppResources(
     // Various icons that our application can use, including the icon
     // that will be used for the desktop.
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/16.png"),
+        b.path("images/chirithy/icons/16.png"),
         "share/icons/hicolor/16x16/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/32.png"),
+        b.path("images/chirithy/icons/32.png"),
         "share/icons/hicolor/32x32/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/128.png"),
+        b.path("images/chirithy/icons/128.png"),
         "share/icons/hicolor/128x128/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/256.png"),
+        b.path("images/chirithy/icons/256.png"),
         "share/icons/hicolor/256x256/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/512.png"),
+        b.path("images/chirithy/icons/512.png"),
         "share/icons/hicolor/512x512/apps/dev.chirithy.terminal.png",
     ).step);
     // Flatpaks only support icons up to 512x512.
     if (!cfg.flatpak) {
         try steps.append(b.allocator, &b.addInstallFile(
-            b.path("images/gnome/1024.png"),
+            b.path("images/chirithy/icons/1024.png"),
             "share/icons/hicolor/1024x1024/apps/dev.chirithy.terminal.png",
         ).step);
     }
 
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/32.png"),
+        b.path("images/chirithy/icons/32.png"),
         "share/icons/hicolor/16x16@2/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/64.png"),
+        b.path("images/chirithy/icons/64.png"),
         "share/icons/hicolor/32x32@2/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/256.png"),
+        b.path("images/chirithy/icons/256.png"),
         "share/icons/hicolor/128x128@2/apps/dev.chirithy.terminal.png",
     ).step);
     try steps.append(b.allocator, &b.addInstallFile(
-        b.path("images/gnome/512.png"),
+        b.path("images/chirithy/icons/512.png"),
         "share/icons/hicolor/256x256@2/apps/dev.chirithy.terminal.png",
     ).step);
 }

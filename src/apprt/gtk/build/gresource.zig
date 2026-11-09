@@ -20,7 +20,10 @@ pub const css_path = "src/apprt/gtk/css";
 /// If any size doesn't exist then it will be an error. We could
 /// infer this completely from available files but we wouldn't be
 /// able to error when they don't exist that way.
-pub const icon_sizes: []const comptime_int = &.{ 16, 32, 128, 256, 512, 1024 };
+///
+/// 1024 is left out: every size also needs a 2x file and the source art is
+/// far too small for a 2048px render to carry any extra detail.
+pub const icon_sizes: []const comptime_int = &.{ 16, 32, 128, 256, 512 };
 
 /// The oldest libadwaita Ghostty supports. Individual blueprints can
 /// require newer than this, never older, so the build checks the headers
@@ -77,8 +80,8 @@ pub const file_inputs = deps: {
     var deps: [total][]const u8 = undefined;
     var index: usize = 0;
     for (icon_sizes) |size| {
-        deps[index] = std.fmt.comptimePrint("images/gnome/{d}.png", .{size});
-        deps[index + 1] = std.fmt.comptimePrint("images/gnome/{d}.png", .{size * 2});
+        deps[index] = std.fmt.comptimePrint("images/chirithy/icons/{d}.png", .{size});
+        deps[index + 1] = std.fmt.comptimePrint("images/chirithy/icons/{d}.png", .{size * 2});
         index += 2;
     }
     for (blueprints) |bp| {
@@ -160,7 +163,7 @@ fn genIcons(io: std.Io, writer: *std.Io.Writer) !void {
         // 1x
         {
             const alias = std.fmt.comptimePrint("{d}x{d}", .{ size, size });
-            const source = std.fmt.comptimePrint("images/gnome/{d}.png", .{size});
+            const source = std.fmt.comptimePrint("images/chirithy/icons/{d}.png", .{size});
             try cwd.access(io, source, .{});
             try writer.print(
                 \\    <file alias="{s}/apps/{s}.png">{s}</file>
@@ -173,7 +176,7 @@ fn genIcons(io: std.Io, writer: *std.Io.Writer) !void {
         // 2x
         {
             const alias = std.fmt.comptimePrint("{d}x{d}@2", .{ size, size });
-            const source = std.fmt.comptimePrint("images/gnome/{d}.png", .{size * 2});
+            const source = std.fmt.comptimePrint("images/chirithy/icons/{d}.png", .{size * 2});
             try cwd.access(io, source, .{});
             try writer.print(
                 \\    <file alias="{s}/apps/{s}.png">{s}</file>
