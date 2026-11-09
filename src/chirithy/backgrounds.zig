@@ -14,16 +14,16 @@ pub const subdir = "backgrounds";
 
 pub const Background = enum {
     /// An endless sky over still water.
-    final_world_spirit,
+    final_world_day,
 
     /// The same view at night, with a single light on the horizon.
-    final_world_nightmare,
+    final_world_night,
 
     /// The Final World as it looks in the given mode.
     pub fn finalWorld(mode: Mode) Background {
         return switch (mode) {
-            .spirit => .final_world_spirit,
-            .nightmare => .final_world_nightmare,
+            .spirit => .final_world_day,
+            .nightmare => .final_world_night,
         };
     }
 
@@ -31,8 +31,8 @@ pub const Background = enum {
     /// file and in the installed `subdir`.
     pub fn filename(self: Background) []const u8 {
         return switch (self) {
-            .final_world_spirit => "final-world-spirit.jpg",
-            .final_world_nightmare => "final-world-nightmare.jpg",
+            .final_world_day => "final-world-day.jpg",
+            .final_world_night => "final-world-night.jpg",
         };
     }
 };
@@ -54,8 +54,8 @@ pub fn path(alloc: Allocator, background: Background) PathError![:0]const u8 {
 
 test "every mode has a Final World" {
     const testing = std.testing;
-    try testing.expectEqual(Background.final_world_spirit, Background.finalWorld(.spirit));
-    try testing.expectEqual(Background.final_world_nightmare, Background.finalWorld(.nightmare));
+    try testing.expectEqual(Background.final_world_day, Background.finalWorld(.spirit));
+    try testing.expectEqual(Background.final_world_night, Background.finalWorld(.nightmare));
 }
 
 test "every background exists in the source tree" {
@@ -76,6 +76,6 @@ test "path needs a resources directory" {
     // Tests run without one.
     try testing.expectError(
         error.ResourcesDirNotFound,
-        path(testing.allocator, .final_world_spirit),
+        path(testing.allocator, .final_world_day),
     );
 }
