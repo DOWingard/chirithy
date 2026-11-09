@@ -11349,11 +11349,13 @@ test "chirithy spirit follows the desktop and nightmare has its own theme" {
 
     // Light desktop: Chirithy Spirit.
     try testing.expectEqual(Color{ .r = 0xEC, .g = 0xE9, .b = 0xE7 }, cfg.background);
+    try testing.expectEqual(@as(f64, 0.5), cfg.@"faint-opacity");
 
     // Dark desktop: Chirithy Spirit Dark.
     var dark = (try cfg.changeConditionalState(.{ .theme = .dark })).?;
     defer dark.deinit();
     try testing.expectEqual(Color{ .r = 0x00, .g = 0x00, .b = 0x00 }, dark.background);
+    try testing.expectEqual(@as(f64, 0.2), dark.@"faint-opacity");
 
     // Nightmare from Spirit Dark. Both states are dark, so the Spirit Dark
     // settings must not be replayed over the Nightmare theme.
@@ -11364,6 +11366,10 @@ test "chirithy spirit follows the desktop and nightmare has its own theme" {
     defer nightmare.deinit();
     try testing.expectEqual(Color{ .r = 0x1D, .g = 0x10, .b = 0x22 }, nightmare.background);
     try testing.expectEqual(Color{ .r = 0xF0, .g = 0xE3, .b = 0xEE }, nightmare.foreground);
+
+    // Settings the Nightmare theme leaves alone fall back to the defaults
+    // rather than keeping the Spirit Dark values.
+    try testing.expectEqual(@as(f64, 0.5), nightmare.@"faint-opacity");
 
     // And back again.
     var spirit = (try nightmare.changeConditionalState(.{ .theme = .dark })).?;

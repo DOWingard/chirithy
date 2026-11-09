@@ -10,6 +10,12 @@
 # both as text on the background and as a background under the foreground.
 # Normal colors keep at least 4.5:1 against the background and 3:1 under the
 # foreground, bright colors at least 7:1 against the background.
+#
+# Faint text is blended in linear light, so at the default opacity of 0.5 white
+# on black only drops to about 76 L* and dim text barely stands out. At 0.2 it
+# sits about as far from ordinary text as it does in the light theme while
+# keeping 5:1 against the background.
+faint-opacity = 0.2
 palette = 0=#262626
 palette = 1=#de5b66
 palette = 2=#3d9674

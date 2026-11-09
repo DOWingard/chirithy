@@ -53,7 +53,9 @@ keep your colors in Nightmare mode; the companion still changes.
 text, secondary text, borders and highlighted lines stay apart: black (color
 0) is lifted off the background so that panels drawn in it stay visible, and
 bright black (color 8) keeps a contrast ratio of 4.5:1 both as text on the
-background and as a background under ordinary text.
+background and as a background under ordinary text. Faint (dim) text uses a
+`faint-opacity` of 0.2 instead of 0.5, because faint text is blended in linear
+light and at 0.5 white on black barely dims.
 
 The mode is tracked per terminal, so one split can be in Nightmare mode
 while the one next to it stays in Spirit mode.

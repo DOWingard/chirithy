@@ -67,8 +67,11 @@ const Luminances = struct {
     background: f64,
     foreground: f64,
 
+    /// The `faint-opacity` of the theme, or Ghostty's default.
+    faint_opacity: f64 = 0.5,
+
     fn parse(data: []const u8) !Luminances {
-        var result: Luminances = undefined;
+        var result: Luminances = .{ .palette = undefined, .background = undefined, .foreground = undefined };
         var seen: u32 = 0;
         var it = std.mem.tokenizeScalar(u8, data, '\n');
         while (it.next()) |line| {
@@ -85,6 +88,8 @@ const Luminances = struct {
             } else if (std.mem.startsWith(u8, line, "foreground = ")) {
                 result.foreground = try luminance(line["foreground = ".len..]);
                 seen |= 1 << 17;
+            } else if (std.mem.startsWith(u8, line, "faint-opacity = ")) {
+                result.faint_opacity = try std.fmt.parseFloat(f64, line["faint-opacity = ".len..]);
             }
         }
         if (seen != (1 << 18) - 1) return error.InvalidTheme;
@@ -135,4 +140,11 @@ test "Spirit Dark keeps its greys apart" {
         try testing.expect(ratio(t.foreground, t.palette[i]) >= 3);
         try testing.expect(ratio(t.palette[i + 8], t.background) >= 7);
     }
+
+    // Faint text is the foreground blended toward the background in linear
+    // light. It has to stay readable and still stand apart from ordinary
+    // text; at the default opacity it does not on black.
+    const faint = t.faint_opacity * t.foreground + (1 - t.faint_opacity) * t.background;
+    try testing.expect(ratio(faint, t.background) >= 4.5);
+    try testing.expect(ratio(t.foreground, faint) >= 3);
 }
