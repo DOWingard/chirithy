@@ -22,6 +22,8 @@ unchanged and adds a theme with behavior:
   when one succeeds and shakes when one fails.
 - **The Lux trail.** An optional cursor effect: a streak of light and a
   burst of sparkles when the cursor jumps.
+- **The Final World.** An optional background: an endless sky over still
+  water, by day in Spirit mode and by night in Nightmare mode.
 - **Chirithy chrome.** Its own icon, and tabby stripes on the header and tab
   bars.
 
@@ -73,6 +75,7 @@ option are unchanged. `~/.config/ghostty` is not read.
 | `chirithy-mascot-size`        | `96`           | Height of the companion in pixels, from 32 to 512.                         |
 | `chirithy-mascot-position`    | `bottom-right` | `bottom-right`, `bottom-left`, `top-right` or `top-left`.                  |
 | `chirithy-cursor-trail`       | `false`        | Enable the Lux trail.                                                      |
+| `chirithy-final-world`        | `false`        | Use the Final World as the background.                                     |
 
 Some common setups:
 
@@ -120,6 +123,16 @@ It is off by default because any animated custom shader makes the focused
 terminal render every frame instead of only when something changes. It also
 needs `custom-shader-animation` left at its default.
 
+## The Final World
+
+`chirithy-final-world = true` sets `background-image` to a bundled image for
+the current mode and `background-image-fit` to `cover`. The image follows
+the mode, including when `theme` is a single theme. It does nothing if you
+set `background-image` yourself; `background-image-opacity` still applies.
+
+Both images are soft gradients blended toward the theme background, so text
+stays readable on top of them.
+
 ## What is unchanged
 
 These stay exactly as in Ghostty so that programs and remote hosts that know
@@ -154,7 +167,8 @@ Run the tests for the Chirithy-specific code with:
 ```sh
 zig build test \
   -Dtest-filter=tracker -Dtest-filter=classify -Dtest-filter=polic \
-  -Dtest-filter=builtin -Dtest-filter="bundled shaders"
+  -Dtest-filter=builtin -Dtest-filter="bundled shaders" \
+  -Dtest-filter="Final World"
 ```
 
 ## Scope
