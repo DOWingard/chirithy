@@ -10,6 +10,15 @@ pub const themes = @import("chirithy/themes.zig");
 
 pub const Mode = mode.Mode;
 
+/// The corner a companion sits in. This is the `chirithy-mascot-position`
+/// configuration value.
+pub const MascotPosition = enum {
+    @"bottom-right",
+    @"bottom-left",
+    @"top-right",
+    @"top-left",
+};
+
 /// Something that happened on a surface that the apprt may want to show.
 ///
 /// These are delivered through an optional `chirithyEvent` method on the
@@ -18,6 +27,13 @@ pub const Mode = mode.Mode;
 pub const Event = union(enum) {
     /// The surface entered the given mode.
     mode: Mode,
+
+    /// The shell started running a command. Needs shell integration.
+    command_started,
+
+    /// The command finished, with its exit code if the shell reported one.
+    /// Needs shell integration.
+    command_finished: ?u8,
 };
 
 test {

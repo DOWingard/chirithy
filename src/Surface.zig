@@ -1215,9 +1215,12 @@ pub fn handleMessage(self: *Surface, msg: Message) !void {
 
         .start_command => {
             self.command_timer = .now(global.io(), .awake);
+            self.chirithyEmit(.command_started);
         },
 
         .stop_command => |v| timer: {
+            self.chirithyEmit(.{ .command_finished = v });
+
             const end: std.Io.Timestamp = .now(global.io(), .awake);
             const start = self.command_timer orelse break :timer;
             self.command_timer = null;

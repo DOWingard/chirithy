@@ -41,6 +41,7 @@ pub const minimum_adwaita: struct { major: u16, minor: u16 } = .{
 ///
 /// These will be asserted to exist at runtime.
 pub const blueprints: []const Blueprint = &.{
+    .{ .major = 1, .minor = 0, .name = "chirithy-mascot" },
     .{ .major = 1, .minor = 0, .name = "imgui-widget" },
     .{ .major = 1, .minor = 0, .name = "inspector-widget" },
     .{ .major = 1, .minor = 0, .name = "key-state-overlay" },
@@ -67,6 +68,52 @@ pub const css = [_][]const u8{
     "style.css",
 };
 
+/// The companion artwork: the frames of the Spirit jump animation and the
+/// Nightmare still. Every image has the same aspect ratio and puts the
+/// character's feet on the bottom edge, so the two can be swapped in place.
+pub const mascot = struct {
+    /// The path to the images.
+    pub const path = "images/chirithy/mascot";
+
+    /// Number of frames in the Spirit animation, named `spirit/00.png` up.
+    pub const spirit_frames = 32;
+
+    /// How long each frame of the Spirit animation is shown.
+    pub const spirit_frame_ms = 30;
+
+    /// Width over height of every image.
+    pub const aspect: f64 = 86.0 / 156.0;
+
+    /// Path of every image relative to `path`, which is also its path
+    /// relative to the `mascot` resource prefix.
+    pub const files = files: {
+        @setEvalBranchQuota(100_000);
+        var result: [spirit_frames + 1][]const u8 = undefined;
+        for (0..spirit_frames) |i| {
+            result[i] = std.fmt.comptimePrint("spirit/{d:0>2}.png", .{i});
+        }
+        result[spirit_frames] = "nightmare.png";
+        break :files result;
+    };
+
+    /// Resource path of the given frame of the Spirit animation.
+    pub fn spiritFrame(comptime index: usize) [:0]const u8 {
+        comptime {
+            if (index >= spirit_frames) @compileError("invalid mascot frame");
+            return std.fmt.comptimePrint("{s}/mascot/{s}", .{
+                build_info.resource_path,
+                files[index],
+            });
+        }
+    }
+
+    /// Resource path of the Nightmare still.
+    pub const nightmare: [:0]const u8 = std.fmt.comptimePrint(
+        "{s}/mascot/{s}",
+        .{ build_info.resource_path, files[spirit_frames] },
+    );
+};
+
 pub const Blueprint = struct {
     major: u16,
     minor: u16,
@@ -76,7 +123,8 @@ pub const Blueprint = struct {
 /// The list of filepaths that we depend on. Used for the build
 /// system to have proper caching.
 pub const file_inputs = deps: {
-    const total = (icon_sizes.len * 2) + blueprints.len + css.len;
+    @setEvalBranchQuota(100_000);
+    const total = (icon_sizes.len * 2) + blueprints.len + css.len + mascot.files.len;
     var deps: [total][]const u8 = undefined;
     var index: usize = 0;
     for (icon_sizes) |size| {
@@ -95,6 +143,10 @@ pub const file_inputs = deps: {
     }
     for (css) |name| {
         deps[index] = std.fmt.comptimePrint("{s}/{s}", .{ css_path, name });
+        index += 1;
+    }
+    for (mascot.files) |name| {
+        deps[index] = std.fmt.comptimePrint("{s}/{s}", .{ mascot.path, name });
         index += 1;
     }
     break :deps deps;
@@ -139,6 +191,7 @@ pub fn main(init: std.process.Init) !void {
 
     try genRoot(init.io, writer);
     try genIcons(init.io, writer);
+    try genMascot(init.io, writer);
     try genUi(init.io, writer);
 
     try writer.writeAll(
@@ -185,6 +238,34 @@ fn genIcons(io: std.Io, writer: *std.Io.Writer) !void {
                 .{ alias, build_info.base_application_id, source },
             );
         }
+    }
+
+    try writer.writeAll(
+        \\  </gresource>
+        \\
+    );
+}
+
+/// Generate the companion image resources. The PNGs are stored as they
+/// are: they are already compressed, so compressing them again would only
+/// add a decompression step to startup.
+fn genMascot(io: std.Io, writer: *std.Io.Writer) !void {
+    // One `comptimePrint` per image exceeds the default quota.
+    @setEvalBranchQuota(100_000);
+
+    try writer.print(
+        \\  <gresource prefix="{s}/mascot">
+        \\
+    , .{build_info.resource_path});
+
+    const cwd: std.Io.Dir = .cwd();
+    inline for (mascot.files) |name| {
+        const source = std.fmt.comptimePrint("{s}/{s}", .{ mascot.path, name });
+        try cwd.access(io, source, .{});
+        try writer.print(
+            \\    <file alias="{s}">{s}</file>
+            \\
+        , .{ name, source });
     }
 
     try writer.writeAll(

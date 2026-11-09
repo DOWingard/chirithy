@@ -1,0 +1,38 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ChirithyMascot: Adw.Bin {
+  styles [
+    "chirithy-mascot",
+  ]
+
+  visible: false;
+  // The companion is decoration. It must never take input away from the
+  // terminal underneath it.
+  can-focus: false;
+  can-target: false;
+  focusable: false;
+  focus-on-click: false;
+  halign: end;
+  valign: end;
+  map => $mapped();
+
+  // The direct child of the template must not be one of its bound
+  // children: disposing the template unparents bound children, and the bin
+  // would then unparent the same widget a second time. Hence the wrapper.
+  Adw.Bin {
+    // A picture asks for the full size of its image. Clamping the width is
+    // what scales it down, and the picture derives its height from that.
+    Adw.Clamp clamp {
+      orientation: horizontal;
+
+      Picture picture {
+        can-shrink: true;
+        content-fit: contain;
+        can-focus: false;
+        can-target: false;
+        focusable: false;
+      }
+    }
+  }
+}

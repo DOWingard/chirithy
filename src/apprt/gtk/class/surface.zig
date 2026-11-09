@@ -9,6 +9,7 @@ const gobject = @import("gobject");
 const gtk = @import("gtk");
 
 const apprt = @import("../../../apprt.zig");
+const chirithy = @import("../../../chirithy.zig");
 const build_config = @import("../../../build_config.zig");
 const build_options = @import("build_options");
 const configpkg = @import("../../../config.zig");
@@ -28,6 +29,7 @@ const Common = @import("../class.zig").Common;
 const Application = @import("application.zig").Application;
 const Config = @import("config.zig").Config;
 const ResizeOverlay = @import("resize_overlay.zig").ResizeOverlay;
+const ChirithyMascot = @import("chirithy_mascot.zig").ChirithyMascot;
 const SearchOverlay = @import("search_overlay.zig").SearchOverlay;
 const KeyStateOverlay = @import("key_state_overlay.zig").KeyStateOverlay;
 const ChildExited = @import("surface_child_exited.zig").SurfaceChildExited;
@@ -654,6 +656,9 @@ pub const Surface = extern struct {
         /// The key state overlay
         key_state_overlay: *KeyStateOverlay,
 
+        /// The companion in the corner of the terminal.
+        chirithy_mascot: *ChirithyMascot,
+
         /// The apprt Surface.
         rt_surface: ApprtSurface = undefined,
 
@@ -1167,6 +1172,23 @@ pub const Surface = extern struct {
             .{},
             null,
         );
+    }
+
+    /// Forward what the core tells us about the terminal to the companion.
+    pub fn chirithyEvent(self: *Self, event: chirithy.Event) void {
+        const mascot = self.private().chirithy_mascot;
+        switch (event) {
+            .mode => |mode| mascot.setMode(mode),
+            .command_started => mascot.setBusy(true),
+            .command_finished => |exit_code| {
+                mascot.setBusy(false);
+
+                // Without an exit code we cannot tell success from failure,
+                // so the companion keeps its opinion to itself.
+                const code = exit_code orelse return;
+                mascot.react(if (code == 0) .cheer else .worry);
+            },
+        }
     }
 
     pub fn commandFinished(self: *Self, value: apprt.Action.Value(.command_finished)) bool {
@@ -2421,6 +2443,9 @@ pub const Surface = extern struct {
         // window-padding-x, window-padding-y
         self.syncSplitMinSize();
 
+        // chirithy-mascot, chirithy-mascot-size, chirithy-mascot-position
+        priv.chirithy_mascot.setConfig(config);
+
         // resize-overlay-duration
         {
             const ms = config.@"resize-overlay-duration".asMilliseconds();
@@ -2895,6 +2920,9 @@ pub const Surface = extern struct {
 
         _ = glib.idleAddOnce(idleFocus, self.ref());
         self.as(gobject.Object).notifyByPspec(properties.focused.impl.param_spec);
+
+        // The companion dozes off while we are unfocused.
+        priv.chirithy_mascot.setAwake(focused);
 
         // Bell state and desktop notifications clear when we gain focus.
         if (focused) {
@@ -3521,6 +3549,14 @@ pub const Surface = extern struct {
         const changed = !priv.size.eql(&new_size);
         priv.size = new_size;
 
+        // The companion steps aside when we get too small for it. It is
+        // sized in the same application pixels as our widget, not in the
+        // device pixels of the render surface.
+        {
+            const widget = self.as(gtk.Widget);
+            priv.chirithy_mascot.setRoom(widget.getWidth(), widget.getHeight());
+        }
+
         // If our surface is initialized, we send callbacks.
         if (priv.core_surface) |surface| {
             // We also update the content scale because there is no signal for
@@ -3622,6 +3658,10 @@ pub const Surface = extern struct {
 
         // Store it!
         priv.core_surface = surface;
+
+        // The surface may start out in either mode. Later changes arrive
+        // through `chirithyEvent`.
+        priv.chirithy_mascot.setMode(surface.chirithyMode());
         priv.desktop_notifications = .init(surface.id);
 
         // Give the render surface a pointer to the core surface so it
@@ -3924,6 +3964,7 @@ pub const Surface = extern struct {
 
         fn init(class: *Class) callconv(.c) void {
             gobject.ext.ensureType(ResizeOverlay);
+            gobject.ext.ensureType(ChirithyMascot);
             gobject.ext.ensureType(SearchOverlay);
             gobject.ext.ensureType(KeyStateOverlay);
             gobject.ext.ensureType(ChildExited);
@@ -3947,6 +3988,7 @@ pub const Surface = extern struct {
             class.bindTemplateChildPrivate("resize_overlay", .{});
             class.bindTemplateChildPrivate("search_overlay", .{});
             class.bindTemplateChildPrivate("key_state_overlay", .{});
+            class.bindTemplateChildPrivate("chirithy_mascot", .{});
             class.bindTemplateChildPrivate("terminal_page", .{});
             class.bindTemplateChildPrivate("drop_target", .{});
             class.bindTemplateChildPrivate("surface_drop_target", .{});

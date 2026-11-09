@@ -644,6 +644,30 @@ theme: ?Theme = .{
 /// before the mode changes, so that short commands do not flash the palette.
 @"chirithy-nightmare-triggers": chirithy.mode.Triggers = .{},
 
+/// Show the Chirithy companion in a corner of each terminal. It matches the
+/// mode of its terminal: Spirit Chirithy in Spirit mode and Nightmare
+/// Chirithy in Nightmare mode.
+///
+/// The companion reacts to the shell, which requires shell integration: it
+/// perks up while a command runs, jumps when a command succeeds and shakes
+/// when one fails. It dozes off while its terminal is unfocused, and it is
+/// hidden in terminals too small to spare the room.
+///
+/// The companion never takes mouse or keyboard input. Anything under it
+/// stays clickable and selectable.
+///
+/// This is only supported on GTK.
+@"chirithy-mascot": bool = true,
+
+/// The height of the companion in pixels, before display scaling. The value
+/// is clamped to between 32 and 512.
+@"chirithy-mascot-size": u16 = 96,
+
+/// The corner of the terminal the companion sits in.
+///
+/// Valid values: `bottom-right`, `bottom-left`, `top-right`, `top-left`.
+@"chirithy-mascot-position": chirithy.MascotPosition = .@"bottom-right",
+
 /// Background color for the window.
 /// Specified as either hex (`#RRGGBB` or `RRGGBB`) or a named X11 color.
 background: Color = .{ .r = 0x28, .g = 0x2C, .b = 0x34 },

@@ -2,6 +2,7 @@ const Self = @This();
 
 const std = @import("std");
 const apprt = @import("../../apprt.zig");
+const chirithy = @import("../../chirithy.zig");
 const configpkg = @import("../../config.zig");
 const CoreSurface = @import("../../Surface.zig");
 const ApprtApp = @import("App.zig");
@@ -31,6 +32,11 @@ pub fn core(self: *Self) *CoreSurface {
 pub fn rtApp(self: *Self) *ApprtApp {
     _ = self;
     return Application.default().rt();
+}
+
+/// Called by the core for events the companion reacts to.
+pub fn chirithyEvent(self: *Self, event: chirithy.Event) void {
+    self.surface.chirithyEvent(event);
 }
 
 pub fn close(self: *Self, process_active: bool) void {

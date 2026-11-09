@@ -230,3 +230,74 @@ label.resize-overlay {
   margin: 0;
   padding: 0;
 }
+
+/*
+ * ChirithyMascot
+ *
+ * The durations of the hop and shake animations are mirrored in
+ * chirithy_mascot.zig, which removes the classes again once they finish.
+ */
+.chirithy-mascot {
+  margin: 6px 12px;
+  opacity: 0.9;
+  transition:
+    opacity 400ms ease,
+    filter 400ms ease,
+    transform 200ms ease;
+}
+
+.chirithy-mascot.busy {
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.chirithy-mascot.asleep {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+  transform: none;
+}
+
+.chirithy-mascot.hop {
+  animation: chirithy-hop 800ms ease-out;
+}
+
+.chirithy-mascot.worried {
+  animation: chirithy-shake 500ms ease-in-out;
+}
+
+@keyframes chirithy-hop {
+  0% {
+    transform: translateY(0);
+  }
+  15% {
+    transform: translateY(3px);
+  }
+  45% {
+    transform: translateY(-22px);
+  }
+  80% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes chirithy-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
