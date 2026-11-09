@@ -604,6 +604,44 @@ theme: ?Theme = .{
     .dark = chirithy.themes.nightmare,
 },
 
+/// How a terminal chooses between its two modes. Spirit mode uses the light
+/// theme of a `light:...,dark:...` theme pair and Nightmare mode uses the
+/// dark one.
+///
+/// Valid values:
+///
+///   * `auto` - Choose per terminal from `chirithy-nightmare-triggers`.
+///   * `spirit` - Always Spirit.
+///   * `nightmare` - Always Nightmare.
+///
+/// The mode has no effect on colors if `theme` names a single theme.
+@"chirithy-mode": chirithy.mode.Policy = .auto,
+
+/// The conditions that put a terminal into Nightmare mode while
+/// `chirithy-mode` is `auto`. Any one enabled condition is enough.
+///
+/// Available conditions:
+///
+///   * `dark` - The desktop prefers a dark color scheme.
+///   * `root` - The foreground process of the terminal runs as root, such as
+///     a root shell or a running `sudo` command.
+///   * `ssh` - The foreground process of the terminal is a remote shell
+///     client such as `ssh` or `mosh`.
+///
+/// The format of this is a list of conditions to enable separated by commas.
+/// If you prefix a condition with `no-` then it is disabled. If you omit a
+/// condition, its default value is used, so you must explicitly disable
+/// conditions you don't want. For example, `no-dark` keeps Spirit mode on a
+/// dark desktop while still warning about root and remote sessions.
+///
+/// `root` and `ssh` are only detected on Linux. They look at the process in
+/// the foreground of the terminal itself, so they cannot see inside a
+/// terminal multiplexer or notice a privilege change on the remote end of a
+/// connection. The foreground is sampled a few times per second while the
+/// terminal is focused, and a condition has to hold for about half a second
+/// before the mode changes, so that short commands do not flash the palette.
+@"chirithy-nightmare-triggers": chirithy.mode.Triggers = .{},
+
 /// Background color for the window.
 /// Specified as either hex (`#RRGGBB` or `RRGGBB`) or a named X11 color.
 background: Color = .{ .r = 0x28, .g = 0x2C, .b = 0x34 },

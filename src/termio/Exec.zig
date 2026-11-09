@@ -13,6 +13,7 @@ const global = @import("../global.zig");
 const xev = global.xev;
 const apprt = @import("../apprt.zig");
 const build_config = @import("../build_config.zig");
+const chirithy = @import("../chirithy.zig");
 const configpkg = @import("../config.zig");
 const crash = @import("../crash/main.zig");
 const fastmem = @import("../fastmem.zig");
@@ -385,6 +386,34 @@ fn termiosTimer(
         }, .{ .forever = {} });
     }
 
+    // The same tick samples who holds the foreground, so that the surface
+    // can move between Spirit and Nightmare mode. Riding on this timer means
+    // the sampling also stops while the surface is unfocused; the mode then
+    // catches up on the tick that runs as soon as focus returns.
+    elevation: {
+        var pty: Pty = .{ .master = exec.read_thread_fd, .slave = undefined };
+        const pid = pty.getProcessInfo(.foreground_pid) orelse break :elevation;
+        const previous = exec.elevation.reported;
+        const next = exec.elevation.observe(
+            chirithy.elevation.detect(pid),
+        ) orelse break :elevation;
+        log.debug("foreground elevation changed from={t} to={t} pid={d}", .{
+            previous,
+            next,
+            pid,
+        });
+
+        // Never block the IO thread on this. If the mailbox is full we
+        // forget the change and report it again on the next tick.
+        if (td.surface_mailbox.push(
+            .{ .chirithy_elevation = next },
+            .{ .instant = {} },
+        ) == 0) {
+            log.warn("surface mailbox full, retrying elevation={t} next tick", .{next});
+            exec.elevation.retract(previous);
+        }
+    }
+
     // Repeat the timer
     if (exec.termios_timer_running) {
         exec.termios_timer.run(
@@ -541,6 +570,9 @@ pub const ThreadData = struct {
     termios_timer: xev.Timer,
     termios_timer_c: xev.Completion = .{},
     termios_timer_running: bool = true,
+
+    /// Debounced view of what holds the foreground of the pty.
+    elevation: chirithy.mode.Tracker = .{},
 
     /// The last known termios mode. Used for change detection
     /// to prevent unnecessary locking of expensive mutexes.

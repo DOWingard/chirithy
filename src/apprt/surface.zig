@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 
 const apprt = @import("../apprt.zig");
 const build_config = @import("../build_config.zig");
+const chirithy = @import("../chirithy.zig");
 const App = @import("../App.zig");
 const Surface = @import("../Surface.zig");
 const renderer = @import("../renderer.zig");
@@ -120,6 +121,10 @@ pub const Message = union(enum) {
     /// the terminal. This should always be followed by a false value
     /// unless the surface exits.
     password_input: bool,
+
+    /// What holds the foreground of the terminal changed, which may move
+    /// the surface between Spirit and Nightmare mode.
+    chirithy_elevation: chirithy.mode.Elevation,
 
     /// A terminal color was changed using OSC sequences.
     color_change: terminal.osc.color.ColoredTarget,

@@ -31,6 +31,7 @@ const font = @import("font/main.zig");
 const Command = @import("Command.zig");
 const terminal = @import("terminal/main.zig");
 const configpkg = @import("config.zig");
+const chirithy = @import("chirithy.zig");
 const Duration = configpkg.Config.Duration;
 const input = @import("input.zig");
 const App = @import("App.zig");
@@ -151,6 +152,11 @@ config: DerivedConfig,
 /// This is managed completely by Ghostty core but an apprt action
 /// is sent whenever this changes.
 config_conditional_state: configpkg.ConditionalState,
+
+/// Everything that decides between Spirit and Nightmare mode for this
+/// surface. The resolved mode is what sets the theme half of
+/// `config_conditional_state`; nothing else should write it.
+mode_inputs: chirithy.mode.Inputs,
 
 /// This is set to true if our IO thread notifies us our child exited.
 /// This is used to determine if we need to confirm, hold open, etc.
@@ -482,10 +488,20 @@ pub fn init(
     rt_app: *apprt.runtime.App,
     rt_surface: *apprt.runtime.Surface,
 ) !void {
+    // Our conditional state starts from the app state, which gives us the
+    // desktop color scheme, but the theme half is decided by our mode.
+    const chirithy_inputs: chirithy.mode.Inputs = .{
+        .policy = config_original.@"chirithy-mode",
+        .triggers = config_original.@"chirithy-nightmare-triggers",
+        .system = app.config_conditional_state.theme,
+    };
+    var conditional_state = app.config_conditional_state;
+    conditional_state.theme = chirithy_inputs.resolve().theme();
+
     // Apply our conditional state. If we fail to apply the conditional state
     // then we log and attempt to move forward with the old config.
     var config_: ?configpkg.Config = config_original.changeConditionalState(
-        app.config_conditional_state,
+        conditional_state,
     ) catch |err| err: {
         log.warn("failed to apply conditional state to config err={}", .{err});
         break :err null;
@@ -645,7 +661,8 @@ pub fn init(
 
         // Our conditional state is initialized to the app state. This
         // lets us get the most likely correct color theme and so on.
-        .config_conditional_state = app.config_conditional_state,
+        .config_conditional_state = conditional_state,
+        .mode_inputs = chirithy_inputs,
     };
 
     // The command we're going to execute
@@ -1160,6 +1177,11 @@ pub fn handleMessage(self: *Surface, msg: Message) !void {
         .present_surface => try self.presentSurface(),
 
         .password_input => |v| try self.passwordInput(v),
+
+        .chirithy_elevation => |v| {
+            self.mode_inputs.elevation = v;
+            self.chirithyModeChanged();
+        },
 
         .ring_bell => bell: {
             const now: std.Io.Timestamp = .now(global.io(), .awake);
@@ -1798,6 +1820,43 @@ fn notifyConfigConditionalState(self: *Surface) void {
     };
 }
 
+/// The mode this surface is currently in.
+pub fn chirithyMode(self: *const Surface) chirithy.Mode {
+    return self.mode_inputs.resolve();
+}
+
+/// This should be called anytime an input of the mode changes outside of
+/// a config update. If the surface ends up in the other mode the config is
+/// reloaded for it, and `updateConfig` applies and announces the new mode.
+fn chirithyModeChanged(self: *Surface) void {
+    const mode = self.mode_inputs.resolve();
+    if (self.config_conditional_state.theme == mode.theme()) return;
+    self.notifyConfigConditionalState();
+}
+
+/// Tell the terminal and the apprt that the surface entered a mode. The
+/// config for the mode must already be on its way to the IO thread.
+fn chirithyAnnounce(self: *Surface, mode: chirithy.Mode) void {
+    log.info("entered chirithy mode={t} policy={t} system={t} elevation={t}", .{
+        mode,
+        self.mode_inputs.policy,
+        self.mode_inputs.system,
+        self.mode_inputs.elevation,
+    });
+
+    // Programs that asked for color scheme reports (mode 2031) see the mode
+    // as the scheme, so they can follow the terminal into the other palette.
+    self.queueIo(.{ .color_scheme_report = .{ .force = false } }, .unlocked);
+
+    self.chirithyEmit(.{ .mode = mode });
+}
+
+/// Hand an event to the apprt surface if it wants them.
+fn chirithyEmit(self: *Surface, event: chirithy.Event) void {
+    if (!@hasDecl(apprt.runtime.Surface, "chirithyEvent")) return;
+    self.rt_surface.chirithyEvent(event);
+}
+
 /// Update our configuration at runtime. This can be called by the apprt
 /// to set a surface-specific configuration that differs from the app
 /// or other surfaces.
@@ -1805,6 +1864,15 @@ pub fn updateConfig(
     self: *Surface,
     original: *const configpkg.Config,
 ) !void {
+    // The mode policy is part of the config, so resolve the mode against
+    // the incoming config before the conditional state is applied to it.
+    self.mode_inputs.policy = original.@"chirithy-mode";
+    self.mode_inputs.triggers = original.@"chirithy-nightmare-triggers";
+    const chirithy_mode = self.mode_inputs.resolve();
+    const chirithy_mode_changed =
+        self.config_conditional_state.theme != chirithy_mode.theme();
+    self.config_conditional_state.theme = chirithy_mode.theme();
+
     // Apply our conditional state. If we fail to apply the conditional state
     // then we log and attempt to move forward with the old config.
     var config_: ?configpkg.Config = original.changeConditionalState(
@@ -1903,6 +1971,8 @@ pub fn updateConfig(
         .config_change,
         .{ .config = config },
     );
+
+    if (chirithy_mode_changed) self.chirithyAnnounce(chirithy_mode);
 }
 
 const InitialSizeError = error{
@@ -4879,14 +4949,13 @@ pub fn colorSchemeCallback(self: *Surface, scheme: apprt.ColorScheme) !void {
     };
 
     // If our scheme didn't change, then we don't do anything.
-    if (self.config_conditional_state.theme == new_scheme) return;
+    if (self.mode_inputs.system == new_scheme) return;
 
-    // Setup our conditional state which has the current color theme.
-    self.config_conditional_state.theme = new_scheme;
-    self.notifyConfigConditionalState();
-
-    // If mode 2031 is on, then we report the change live.
-    self.queueIo(.{ .color_scheme_report = .{ .force = false } }, .unlocked);
+    // The desktop scheme is one input of our mode. If it moves us to the
+    // other mode, that switches the conditional theme and reports the
+    // change to the terminal (mode 2031).
+    self.mode_inputs.system = new_scheme;
+    self.chirithyModeChanged();
 }
 
 pub fn posToViewport(self: Surface, xpos: f64, ypos: f64) terminal.point.Coordinate {
