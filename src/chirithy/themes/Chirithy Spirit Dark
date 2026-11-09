@@ -1,0 +1,34 @@
+# Chirithy Spirit Dark
+#
+# Spirit Chirithy at night: white text on black, with the colors of the
+# Spirit theme lightened until they read on black. The pink purse is the
+# cursor and the pale blue cape, deepened, is the selection.
+#
+# The greys keep distinct steps so that dim, secondary and highlighted text
+# stay apart. Black (0) is lifted off the background so that panels drawn in
+# it remain visible. Bright black (8) keeps a contrast ratio of at least 4.5:1
+# both as text on the background and as a background under the foreground.
+# Normal colors keep at least 4.5:1 against the background and 3:1 under the
+# foreground, bright colors at least 7:1 against the background.
+palette = 0=#262626
+palette = 1=#de5b66
+palette = 2=#3d9674
+palette = 3=#ad7f00
+palette = 4=#2d90b9
+palette = 5=#c864a2
+palette = 6=#2493a3
+palette = 7=#bfbfbf
+palette = 8=#767676
+palette = 9=#e8a5aa
+palette = 10=#7dc4a9
+palette = 11=#e7ae0c
+palette = 12=#7fbfda
+palette = 13=#dca7c8
+palette = 14=#5dc5d4
+palette = 15=#ffffff
+background = #000000
+foreground = #ffffff
+cursor-color = #e3737b
+cursor-text = #000000
+selection-background = #29586b
+selection-foreground = #ffffff
