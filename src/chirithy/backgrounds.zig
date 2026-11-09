@@ -7,7 +7,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const global = @import("../global.zig");
-const Mode = @import("mode.zig").Mode;
+const Theme = @import("../config/conditional.zig").State.Theme;
 
 /// The subdirectory of the resources directory the images are installed to.
 pub const subdir = "backgrounds";
@@ -19,11 +19,11 @@ pub const Background = enum {
     /// The same view at night, with a single light on the horizon.
     final_world_night,
 
-    /// The Final World as it looks in the given mode.
-    pub fn finalWorld(mode: Mode) Background {
-        return switch (mode) {
-            .spirit => .final_world_day,
-            .nightmare => .final_world_night,
+    /// The Final World as it looks behind a light or a dark theme.
+    pub fn finalWorld(theme: Theme) Background {
+        return switch (theme) {
+            .light => .final_world_day,
+            .dark => .final_world_night,
         };
     }
 
@@ -52,10 +52,10 @@ pub fn path(alloc: Allocator, background: Background) PathError![:0]const u8 {
     return try std.fs.path.joinZ(alloc, &.{ dir, subdir, background.filename() });
 }
 
-test "every mode has a Final World" {
+test "light and dark themes each have a Final World" {
     const testing = std.testing;
-    try testing.expectEqual(Background.final_world_day, Background.finalWorld(.spirit));
-    try testing.expectEqual(Background.final_world_night, Background.finalWorld(.nightmare));
+    try testing.expectEqual(Background.final_world_day, Background.finalWorld(.light));
+    try testing.expectEqual(Background.final_world_night, Background.finalWorld(.dark));
 }
 
 test "every background exists in the source tree" {

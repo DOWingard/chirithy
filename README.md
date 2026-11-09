@@ -13,17 +13,18 @@ Chirithy is a build of [Ghostty](https://github.com/ghostty-org/ghostty)
 for Linux (GTK). It keeps Ghostty's terminal core, renderer and features
 unchanged and adds a theme with behavior:
 
-- **Two modes.** A terminal is in Spirit mode (light) or Nightmare mode
-  (dark). Spirit is home. A terminal turns to Nightmare while a root
-  process or a remote shell holds its foreground, so the palette is a
-  warning about where your keystrokes are going.
+- **Two modes.** A terminal is in Spirit mode or Nightmare mode. Spirit is
+  home and follows the desktop: light grey fur on a light desktop, white on
+  black on a dark one. A terminal turns to Nightmare while a root process or
+  a remote shell holds its foreground, so the palette is a warning about
+  where your keystrokes are going.
 - **A companion.** Spirit or Nightmare Chirithy sits in a corner of every
   terminal and reacts to the shell: it perks up while a command runs, jumps
   when one succeeds and shakes when one fails.
 - **The Lux trail.** An optional cursor effect: a streak of light and a
   burst of sparkles when the cursor jumps.
 - **The Final World.** An optional background: an endless sky over still
-  water, by day in Spirit mode and by night in Nightmare mode.
+  water, by day behind a light theme and by night behind a dark one.
 - **Chirithy chrome.** Its own icon, and tabby stripes on the header and tab
   bars.
 
@@ -33,15 +34,25 @@ here.
 
 ## Modes
 
-| Mode      | Theme                | Companion          | When                                             |
-| --------- | -------------------- | ------------------ | ------------------------------------------------ |
-| Spirit    | `Chirithy Spirit`    | Spirit Chirithy    | By default                                       |
-| Nightmare | `Chirithy Nightmare` | Nightmare Chirithy | The foreground process is root or a remote shell |
+| Mode      | Theme                                               | Companion          | When                                             |
+| --------- | --------------------------------------------------- | ------------------ | ------------------------------------------------ |
+| Spirit    | `Chirithy Spirit` or `Chirithy Spirit Dark`         | Spirit Chirithy    | By default                                       |
+| Nightmare | `Chirithy Nightmare`                                | Nightmare Chirithy | The foreground process is root or a remote shell |
 
-The default theme is `light:Chirithy Spirit,dark:Chirithy Nightmare`. Spirit
-mode uses the light half of that pair and Nightmare mode the dark half. If
-you set `theme` to a single theme, the mode still decides which companion is
-shown but no longer changes colors.
+Spirit mode uses `theme`, which defaults to
+`light:Chirithy Spirit,dark:Chirithy Spirit Dark` and so follows the desktop
+color scheme. Set `theme = Chirithy Spirit` or `theme = Chirithy Spirit Dark`
+to keep one of them, or any other theme.
+
+Nightmare mode uses `chirithy-nightmare-theme` whatever `theme` is, so the
+warning stays visible with any theme. Set it to the same theme as `theme` to
+keep your colors in Nightmare mode; the companion still changes.
+
+`Chirithy Spirit Dark` is white on black. Its greys are spaced so that dim
+text, secondary text, borders and highlighted lines stay apart: black (color
+0) is lifted off the background so that panels drawn in it stay visible, and
+bright black (color 8) keeps a contrast ratio of 4.5:1 both as text on the
+background and as a background under ordinary text.
 
 The mode is tracked per terminal, so one split can be in Nightmare mode
 while the one next to it stays in Spirit mode.
@@ -58,8 +69,9 @@ Root and remote detection work as follows:
   changes, so a quick `sudo` command does not flash the whole palette.
   Leaving Nightmare mode is immediate.
 
-Programs that enable color scheme reports (mode 2031) are told about mode
-changes, so an editor can follow the terminal into the other palette.
+Programs that enable color scheme reports (mode 2031) are told whenever the
+terminal turns light or dark, so an editor can follow it. Nightmare mode
+always reports dark.
 
 ## Configuration
 
@@ -71,6 +83,7 @@ option are unchanged. `~/.config/ghostty` is not read.
 | ----------------------------- | -------------- | -------------------------------------------------------------------------- |
 | `chirithy-mode`               | `auto`         | `auto`, `spirit` or `nightmare`. The last two pin the mode.                |
 | `chirithy-nightmare-triggers` | `root,ssh`     | What turns `auto` to Nightmare: `root`, `ssh`, `dark`. Prefix `no-` to disable one. |
+| `chirithy-nightmare-theme`    | `Chirithy Nightmare` | The theme of Nightmare mode.                                         |
 | `chirithy-mascot`             | `true`         | Show the companion.                                                        |
 | `chirithy-mascot-size`        | `96`           | Height of the companion in pixels, from 32 to 512.                         |
 | `chirithy-mascot-position`    | `bottom-right` | `bottom-right`, `bottom-left`, `top-right` or `top-left`.                  |
@@ -91,7 +104,7 @@ chirithy-cursor-trail = true
 
 The `dark` trigger is off by default on purpose. With it on, a dark desktop
 keeps every terminal in Nightmare mode, and the root and remote warnings can
-no longer be seen.
+no longer be seen. Without it, a dark desktop gets `Chirithy Spirit Dark`.
 
 ## The companion
 
@@ -125,12 +138,12 @@ needs `custom-shader-animation` left at its default.
 
 ## The Final World
 
-`chirithy-final-world = true` sets `background-image` to a bundled image for
-the current mode and `background-image-fit` to `cover`. The image follows
-the mode, including when `theme` is a single theme. It does nothing if you
+`chirithy-final-world = true` sets `background-image` to a bundled image and
+`background-image-fit` to `cover`: the view by day behind a light theme, and
+by night behind a dark theme and in Nightmare mode. It does nothing if you
 set `background-image` yourself; `background-image-opacity` still applies.
 
-Both images are soft gradients blended toward the theme background, so text
+Both images are soft gradients, light by day and dark by night, so text
 stays readable on top of them.
 
 ## What is unchanged
@@ -168,7 +181,8 @@ Run the tests for the Chirithy-specific code with:
 zig build test \
   -Dtest-filter=tracker -Dtest-filter=classify -Dtest-filter=polic \
   -Dtest-filter=builtin -Dtest-filter="bundled shaders" \
-  -Dtest-filter="Final World"
+  -Dtest-filter="Final World" -Dtest-filter=chirithy -Dtest-filter=spirit \
+  -Dtest-filter="Spirit Dark"
 ```
 
 ## Scope

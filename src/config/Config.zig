@@ -601,20 +601,18 @@ language: ?[:0]const u8 = null,
 ///   - macOS: titlebar tabs style is not updated when switching themes.
 theme: ?Theme = .{
     .light = chirithy.themes.spirit,
-    .dark = chirithy.themes.nightmare,
+    .dark = chirithy.themes.spirit_dark,
 },
 
-/// How a terminal chooses between its two modes. Spirit mode uses the light
-/// theme of a `light:...,dark:...` theme pair and Nightmare mode uses the
-/// dark one.
+/// How a terminal chooses between its two modes. Spirit mode uses `theme`,
+/// so with a `light:...,dark:...` pair it follows the desktop color scheme.
+/// Nightmare mode uses `chirithy-nightmare-theme`.
 ///
 /// Valid values:
 ///
 ///   * `auto` - Choose per terminal from `chirithy-nightmare-triggers`.
 ///   * `spirit` - Always Spirit.
 ///   * `nightmare` - Always Nightmare.
-///
-/// The mode has no effect on colors if `theme` names a single theme.
 @"chirithy-mode": chirithy.mode.Policy = .auto,
 
 /// The conditions that put a terminal into Nightmare mode while
@@ -628,7 +626,8 @@ theme: ?Theme = .{
 ///     client such as `ssh` or `mosh`. Enabled by default.
 ///   * `dark` - The desktop prefers a dark color scheme. Disabled by
 ///     default, because on a dark desktop it keeps every terminal in
-///     Nightmare mode and so hides the other two conditions.
+///     Nightmare mode and so hides the other two conditions. Without it, a
+///     dark desktop uses the dark half of `theme`.
 ///
 /// The format of this is a list of conditions to enable separated by commas.
 /// If you prefix a condition with `no-` then it is disabled. If you omit a
@@ -643,6 +642,15 @@ theme: ?Theme = .{
 /// terminal is focused, and a condition has to hold for about half a second
 /// before the mode changes, so that short commands do not flash the palette.
 @"chirithy-nightmare-triggers": chirithy.mode.Triggers = .{},
+
+/// The theme of Nightmare mode, by name or absolute path like `theme`. It
+/// is used whatever `theme` is set to, so the warning stays visible with any
+/// theme. Name the same theme as `theme` to keep your colors in Nightmare
+/// mode; the companion still changes.
+///
+/// Programs that ask for the color scheme (mode 2031) are always told that
+/// Nightmare mode is dark.
+@"chirithy-nightmare-theme": []const u8 = chirithy.themes.nightmare,
 
 /// Show the Chirithy companion in a corner of each terminal. It matches the
 /// mode of its terminal: Spirit Chirithy in Spirit mode and Nightmare
@@ -680,10 +688,10 @@ theme: ?Theme = .{
 @"chirithy-cursor-trail": bool = false,
 
 /// Use the Final World as the terminal background: an endless sky over
-/// still water in Spirit mode, and the same view at night with a single
-/// light on the horizon in Nightmare mode.
+/// still water with a light theme, and the same view at night with a single
+/// light on the horizon with a dark theme and in Nightmare mode.
 ///
-/// This sets `background-image` to a bundled image for the current mode and
+/// This sets `background-image` to a bundled image for the current theme and
 /// `background-image-fit` to `cover`. It does nothing if you set
 /// `background-image` yourself.
 @"chirithy-final-world": bool = false,
@@ -4740,9 +4748,15 @@ fn loadTheme(self: *Config, theme: Theme) !void {
     // Load the correct theme depending on the conditional state.
     // Dark/light themes were programmed prior to conditional configuration
     // so when we introduce that we probably want to replace this.
-    const name: []const u8 = switch (self._conditional_state.theme) {
-        .light => theme.light,
-        .dark => theme.dark,
+    var home_buf: [std.Io.Dir.max_path_bytes]u8 = undefined;
+    const name: []const u8 = switch (self._conditional_state.chirithy_mode) {
+        .spirit => switch (self._conditional_state.theme) {
+            .light => theme.light,
+            .dark => theme.dark,
+        },
+        // Nightmare mode is a warning, so it keeps its own theme whatever
+        // the configured one is.
+        .nightmare => expandHome(self.@"chirithy-nightmare-theme", &home_buf),
     };
 
     // Built-in themes are compiled in, so the default theme resolves even
@@ -4764,6 +4778,29 @@ fn loadTheme(self: *Config, theme: Theme) !void {
     var buf: [2048]u8 = undefined;
     var file_reader = file.reader(global.io(), &buf);
     return self.loadThemeFrom(&file_reader.interface, themefile.path);
+}
+
+/// The number of conditions `themeConditions` writes.
+const theme_conds = 2;
+
+/// The conditions under which the settings of the theme loaded for the
+/// current conditional state apply. Each part of the state that chooses the
+/// theme must be one of them: when a replay lands on a state that loads a
+/// different theme, the settings of this one must not apply over it, even if
+/// the two states share a light/dark value.
+fn themeConditions(self: *const Config, conds: *[theme_conds]Conditional) void {
+    conds.* = .{
+        .{
+            .key = .theme,
+            .op = .eq,
+            .value = @tagName(self._conditional_state.theme),
+        },
+        .{
+            .key = .chirithy_mode,
+            .op = .eq,
+            .value = @tagName(self._conditional_state.chirithy_mode),
+        },
+    };
 }
 
 /// Load a theme from its contents and apply the existing config on top.
@@ -4808,12 +4845,8 @@ fn loadThemeFrom(
             // Change our arg to be conditional on our theme.
             .arg => |v| {
                 const alloc_arena = new_config._arena.?.allocator();
-                const conds = try alloc_arena.alloc(Conditional, 1);
-                conds[0] = .{
-                    .key = .theme,
-                    .op = .eq,
-                    .value = @tagName(self._conditional_state.theme),
-                };
+                const conds = try alloc_arena.alloc(Conditional, theme_conds);
+                self.themeConditions(conds[0..theme_conds]);
                 item.* = .{ .conditional_arg = .{
                     .conditions = conds,
                     .arg = v,
@@ -4822,13 +4855,9 @@ fn loadThemeFrom(
 
             .conditional_arg => |v| {
                 const alloc_arena = new_config._arena.?.allocator();
-                const conds = try alloc_arena.alloc(Conditional, v.conditions.len + 1);
-                conds[0] = .{
-                    .key = .theme,
-                    .op = .eq,
-                    .value = @tagName(self._conditional_state.theme),
-                };
-                @memcpy(conds[1..], v.conditions);
+                const conds = try alloc_arena.alloc(Conditional, v.conditions.len + theme_conds);
+                self.themeConditions(conds[0..theme_conds]);
+                @memcpy(conds[theme_conds..], v.conditions);
                 item.* = .{ .conditional_arg = .{
                     .conditions = conds,
                     .arg = v.arg,
@@ -4872,15 +4901,19 @@ pub fn finalize(self: *Config) !void {
             // Mark that we use a conditional theme
             self._conditional_set.insert(.theme);
         }
+
+        // Nightmare mode loads its own theme.
+        self._conditional_set.insert(.chirithy_mode);
     }
 
-    // The Final World is a pair of bundled background images, one per mode.
+    // The Final World is a pair of bundled background images, by day for a
+    // light theme and by night for a dark one. Nightmare mode always counts
+    // as dark, so the night image covers it as well.
     if (self.@"chirithy-final-world" and self.@"background-image" == null) world: {
-        const mode: chirithy.Mode = switch (self._conditional_state.theme) {
-            .light => .spirit,
-            .dark => .nightmare,
-        };
-        const path = chirithy.backgrounds.path(alloc, .finalWorld(mode)) catch |err| switch (err) {
+        const path = chirithy.backgrounds.path(
+            alloc,
+            .finalWorld(self._conditional_state.theme),
+        ) catch |err| switch (err) {
             error.OutOfMemory => return error.OutOfMemory,
             error.ResourcesDirNotFound => {
                 log.warn("chirithy-final-world is set but the resources directory was not found", .{});
@@ -4892,8 +4925,8 @@ pub fn finalize(self: *Config) !void {
         self.@"background-image" = .{ .optional = path };
         self.@"background-image-fit" = .cover;
 
-        // The image depends on the mode even when the theme does not, so
-        // the config has to be rebuilt whenever the mode changes.
+        // The image depends on the light/dark state even when the theme
+        // does not, so the config has to be rebuilt whenever it changes.
         self._conditional_set.insert(.theme);
     }
 
@@ -11294,6 +11327,85 @@ test "theme specifying light/dark sets theme usage in conditional state" {
         try testing.expect(cfg.@"window-theme" == .system);
         try testing.expect(cfg._conditional_set.contains(.theme));
     }
+}
+
+test "chirithy spirit follows the desktop and nightmare has its own theme" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var cfg = try Config.default(alloc);
+    defer cfg.deinit();
+    try cfg.finalize();
+    try testing.expect(cfg._conditional_set.contains(.theme));
+    try testing.expect(cfg._conditional_set.contains(.chirithy_mode));
+
+    // Light desktop: Chirithy Spirit.
+    try testing.expectEqual(Color{ .r = 0xEC, .g = 0xE9, .b = 0xE7 }, cfg.background);
+
+    // Dark desktop: Chirithy Spirit Dark.
+    var dark = (try cfg.changeConditionalState(.{ .theme = .dark })).?;
+    defer dark.deinit();
+    try testing.expectEqual(Color{ .r = 0x00, .g = 0x00, .b = 0x00 }, dark.background);
+
+    // Nightmare from Spirit Dark. Both states are dark, so the Spirit Dark
+    // settings must not be replayed over the Nightmare theme.
+    var nightmare = (try dark.changeConditionalState(.{
+        .theme = .dark,
+        .chirithy_mode = .nightmare,
+    })).?;
+    defer nightmare.deinit();
+    try testing.expectEqual(Color{ .r = 0x1D, .g = 0x10, .b = 0x22 }, nightmare.background);
+    try testing.expectEqual(Color{ .r = 0xF0, .g = 0xE3, .b = 0xEE }, nightmare.foreground);
+
+    // And back again.
+    var spirit = (try nightmare.changeConditionalState(.{ .theme = .dark })).?;
+    defer spirit.deinit();
+    try testing.expectEqual(Color{ .r = 0x00, .g = 0x00, .b = 0x00 }, spirit.background);
+    try testing.expectEqual(Color{ .r = 0xFF, .g = 0xFF, .b = 0xFF }, spirit.foreground);
+}
+
+test "chirithy nightmare theme applies over a single theme" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var cfg = try Config.default(alloc);
+    defer cfg.deinit();
+    var it: TestIterator = .{ .data = &.{"--theme=Chirithy Spirit"} };
+    try cfg.loadIter(alloc, &it);
+    try cfg.finalize();
+
+    // A single theme does not depend on the desktop, only on the mode.
+    try testing.expect(!cfg._conditional_set.contains(.theme));
+    try testing.expect(cfg._conditional_set.contains(.chirithy_mode));
+    try testing.expect(try cfg.changeConditionalState(.{ .theme = .dark }) == null);
+
+    var nightmare = (try cfg.changeConditionalState(.{
+        .theme = .dark,
+        .chirithy_mode = .nightmare,
+    })).?;
+    defer nightmare.deinit();
+    try testing.expectEqual(Color{ .r = 0x1D, .g = 0x10, .b = 0x22 }, nightmare.background);
+}
+
+test "chirithy nightmare theme can keep the configured colors" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var cfg = try Config.default(alloc);
+    defer cfg.deinit();
+    var it: TestIterator = .{ .data = &.{
+        "--theme=Chirithy Spirit",
+        "--chirithy-nightmare-theme=Chirithy Spirit",
+    } };
+    try cfg.loadIter(alloc, &it);
+    try cfg.finalize();
+
+    var nightmare = (try cfg.changeConditionalState(.{
+        .theme = .dark,
+        .chirithy_mode = .nightmare,
+    })).?;
+    defer nightmare.deinit();
+    try testing.expectEqual(Color{ .r = 0xEC, .g = 0xE9, .b = 0xE7 }, nightmare.background);
 }
 
 test "scrollback limits" {

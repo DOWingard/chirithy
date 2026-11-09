@@ -1,12 +1,14 @@
 //! Spirit and Nightmare mode.
 //!
-//! A surface is always in exactly one of the two modes. The mode decides
-//! which side of a light/dark theme pair the surface renders with and which
-//! companion it shows. Spirit is home. A surface turns to Nightmare while
-//! something privileged or remote holds its foreground, which makes the
-//! palette a warning about where the next keystrokes are going. Following
-//! the desktop color scheme instead is opt-in, because doing both at once
-//! would hide that warning from everyone on a dark desktop.
+//! A surface is always in exactly one of the two modes. Spirit is home: it
+//! renders with the configured theme, which follows the desktop color scheme
+//! when it is a light/dark pair. A surface turns to Nightmare while something
+//! privileged or remote holds its foreground, which makes the palette a
+//! warning about where the next keystrokes are going. Nightmare has a theme
+//! of its own and always counts as dark.
+//!
+//! The mode reaches the config through the conditional state, together with
+//! the light/dark state it implies, so that the config can pick the theme.
 
 const std = @import("std");
 const conditional = @import("../config/conditional.zig");
@@ -14,14 +16,6 @@ const conditional = @import("../config/conditional.zig");
 pub const Mode = enum {
     spirit,
     nightmare,
-
-    /// The conditional theme state a surface in this mode uses.
-    pub fn theme(self: Mode) conditional.State.Theme {
-        return switch (self) {
-            .spirit => .light,
-            .nightmare => .dark,
-        };
-    }
 };
 
 /// How the mode of a surface is chosen. This is the `chirithy-mode`
@@ -73,6 +67,18 @@ pub const Inputs = struct {
     system: conditional.State.Theme = .light,
 
     elevation: Elevation = .none,
+
+    /// The conditional state of a surface with these inputs. Fields the
+    /// mode does not decide are taken from `base`.
+    pub fn conditionalState(self: Inputs, base: conditional.State) conditional.State {
+        var state = base;
+        state.chirithy_mode = self.resolve();
+        state.theme = switch (state.chirithy_mode) {
+            .spirit => self.system,
+            .nightmare => .dark,
+        };
+        return state;
+    }
 
     pub fn resolve(self: Inputs) Mode {
         return switch (self.policy) {
@@ -139,10 +145,24 @@ pub const Tracker = struct {
     }
 };
 
-test "mode maps onto the theme pair" {
+test "spirit follows the desktop and nightmare is always dark" {
     const testing = std.testing;
-    try testing.expectEqual(conditional.State.Theme.light, Mode.spirit.theme());
-    try testing.expectEqual(conditional.State.Theme.dark, Mode.nightmare.theme());
+    const base: conditional.State = .{};
+
+    const light_spirit = (Inputs{ .system = .light }).conditionalState(base);
+    try testing.expectEqual(Mode.spirit, light_spirit.chirithy_mode);
+    try testing.expectEqual(conditional.State.Theme.light, light_spirit.theme);
+
+    const dark_spirit = (Inputs{ .system = .dark }).conditionalState(base);
+    try testing.expectEqual(Mode.spirit, dark_spirit.chirithy_mode);
+    try testing.expectEqual(conditional.State.Theme.dark, dark_spirit.theme);
+
+    const nightmare = (Inputs{ .system = .light, .elevation = .root }).conditionalState(base);
+    try testing.expectEqual(Mode.nightmare, nightmare.chirithy_mode);
+    try testing.expectEqual(conditional.State.Theme.dark, nightmare.theme);
+
+    // Fields the mode does not decide are kept.
+    try testing.expectEqual(base.os, nightmare.os);
 }
 
 test "fixed policies ignore every condition" {

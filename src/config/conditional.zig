@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
+const ChirithyMode = @import("../chirithy/mode.zig").Mode;
 
 /// Conditionals in Ghostty configuration are based on a static, typed
 /// state of the world instead of a dynamic key-value set. This simplifies
@@ -12,6 +13,10 @@ pub const State = struct {
 
     /// The target OS of the current build.
     os: std.Target.Os.Tag = builtin.target.os.tag,
+
+    /// The Chirithy mode of the surface. A config that sets a theme depends
+    /// on it, because Nightmare mode loads a theme of its own.
+    chirithy_mode: ChirithyMode = .spirit,
 
     pub const Theme = enum { light, dark };
 
